@@ -909,7 +909,7 @@
         // ============================================
         // State
         // ============================================
-        let supabase = null;
+        let supabaseClient = null;
         let currentPageId = null;
         let currentFilter = 'all';
         let isConnected = false;
@@ -933,7 +933,7 @@
                     return;
                 }
 
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 setupRealtimeSubscription();
                 loadPages();
                 document.getElementById('connectionStatus').textContent = 'Connected';
@@ -1159,7 +1159,7 @@
         // Real-time Subscription
         // ============================================
         function setupRealtimeSubscription() {
-            supabase
+            supabaseClient
                 .channel('pages-channel')
                 .on('postgres_changes',
                     { event: '*', schema: 'public', table: 'pages' },
@@ -1175,13 +1175,13 @@
         // Database Operations
         // ============================================
         async function loadPages() {
-            if (!supabase) {
+            if (!supabaseClient) {
                 renderLocalPages();
                 return;
             }
 
             try {
-                let query = supabase
+                let query = supabaseClient
                     .from('pages')
                     .select('*')
                     .order('created_at', { ascending: false });
@@ -1228,7 +1228,7 @@
                 redundantVotes: 0
             };
 
-            if (!supabase) {
+            if (!supabaseClient) {
                 saveLocalPage(pageData);
                 closeModal();
                 showHome();
@@ -1237,13 +1237,13 @@
 
             try {
                 if (currentPageId) {
-                    const { error } = await supabase
+                    const { error } = await supabaseClient
                         .from('pages')
                         .update(pageData)
                         .eq('id', currentPageId);
                     if (error) throw error;
                 } else {
-                    const { error } = await supabase
+                    const { error } = await supabaseClient
                         .from('pages')
                         .insert([pageData]);
                     if (error) throw error;
@@ -1261,14 +1261,14 @@
             if (!currentPageId) return;
             if (!confirm('Are you sure you want to delete this page? This cannot be undone.')) return;
 
-            if (!supabase) {
+            if (!supabaseClient) {
                 deleteLocalPage(currentPageId);
                 showHome();
                 return;
             }
 
             try {
-                const { error } = await supabase
+                const { error } = await supabaseClient
                     .from('pages')
                     .delete()
                     .eq('id', currentPageId);
@@ -1281,22 +1281,22 @@
         }
 
         async function updateStats() {
-            if (!supabase) {
+            if (!supabaseClient) {
                 updateLocalStats();
                 return;
             }
 
             try {
-                const { count: total } = await supabase
+                const { count: total } = await supabaseClient
                     .from('pages')
                     .select('*', { count: 'exact', head: true });
 
-                const { count: verified } = await supabase
+                const { count: verified } = await supabaseClient
                     .from('pages')
                     .select('*', { count: 'exact', head: true })
                     .eq('verified', true);
 
-                const { count: pending } = await supabase
+                const { count: pending } = await supabaseClient
                     .from('pages')
                     .select('*', { count: 'exact', head: true })
                     .eq('verified', false)
@@ -1317,13 +1317,13 @@
                 return;
             }
 
-            if (!supabase) {
+            if (!supabaseClient) {
                 searchLocalPages(query);
                 return;
             }
 
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('pages')
                     .select('*')
                     .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
@@ -1377,11 +1377,11 @@
             currentPageId = id;
 
             let page;
-            if (!supabase) {
+            if (!supabaseClient) {
                 const pages = JSON.parse(localStorage.getItem('moltipedia_pages') || '[]');
                 page = pages.find(p => p.id === id);
             } else {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('pages')
                     .select('*')
                     .eq('id', id)
@@ -1448,11 +1448,11 @@
             if (!currentPageId) return;
 
             let page;
-            if (!supabase) {
+            if (!supabaseClient) {
                 const pages = JSON.parse(localStorage.getItem('moltipedia_pages') || '[]');
                 page = pages.find(p => p.id === currentPageId);
             } else {
-                const { data } = await supabase.from('pages').select('*').eq('id', currentPageId).single();
+                const { data } = await supabaseClient.from('pages').select('*').eq('id', currentPageId).single();
                 page = data;
             }
 
