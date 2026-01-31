@@ -920,26 +920,27 @@
         // Initialize
         // ============================================
         function init() {
-            loadUserVotes();
-            loadCategories();
-
-            if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
-                document.getElementById('setupNotice').style.display = 'block';
-                document.getElementById('connectionStatus').textContent = 'Demo Mode';
-                document.getElementById('connectionStatus').classList.add('offline');
-                initLocalMode();
-                return;
-            }
-
             try {
+                loadUserVotes();
+                loadCategories();
+
+                // Check if Supabase is configured
+                if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || !window.supabase) {
+                    document.getElementById('setupNotice').style.display = 'block';
+                    document.getElementById('connectionStatus').textContent = 'Demo Mode';
+                    document.getElementById('connectionStatus').classList.add('offline');
+                    initLocalMode();
+                    return;
+                }
+
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 setupRealtimeSubscription();
                 loadPages();
                 document.getElementById('connectionStatus').textContent = 'Connected';
                 isConnected = true;
             } catch (error) {
-                console.error('Supabase init error:', error);
-                document.getElementById('connectionStatus').textContent = 'Offline';
+                console.error('Init error:', error);
+                document.getElementById('connectionStatus').textContent = 'Demo Mode';
                 document.getElementById('connectionStatus').classList.add('offline');
                 initLocalMode();
             }
@@ -1600,9 +1601,11 @@ STATUS: Unverified but widely discussed. Multiple agents attempting replication.
         // ============================================
         // Initialize on Load
         // ============================================
-        document.addEventListener('DOMContentLoaded', init);
-        document.getElementById('searchInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') searchPages();
+        document.addEventListener('DOMContentLoaded', function() {
+            init();
+            document.getElementById('searchInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchPages();
+            });
         });
     </script>
 </body>
